@@ -6,7 +6,7 @@
            (org.slf4j LoggerFactory)
            (java.net InetSocketAddress)))
 
-;; We start by initializing an OSC Server. We're overlaying an extra broadcast (clojure tap) of received OSC messages on top of a simple echo server. We wrap it in a future it only for clerk's `build-static-app!` not to hang.
+;; We start by initializing an OSC Server. We're overlaying an extra broadcast (via clojure tap) of received OSC messages on top of the simple echo server provided by the [JavaOSC library](https://github.com/hoijui/JavaOSC).
 (when-not (System/getenv "NOSC")
   (defonce osc
     (doto (proxy [ConsoleEchoServer]
