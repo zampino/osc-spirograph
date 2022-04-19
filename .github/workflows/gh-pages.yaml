@@ -15,6 +15,13 @@ jobs:
         with:
           cli: 1.10.3.1087
 
+      - name: 🗝 maven cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.m2
+            ~/.gitlibs
+
       - name: 🔨 Build static site
         run: NOSC=true clojure -X:nextjournal/clerk
 
@@ -26,5 +33,5 @@ jobs:
       - name: 🚀 Deploy
         uses: JamesIves/github-pages-deploy-action@v4.3.0
         with:
-          branch: main
+          branch: gh-pages
           folder: ./public/build/notebooks
