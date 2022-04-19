@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html class="overflow-hidden min-h-screen"><head><title>꩜ OSC Spirograph</title><meta charset="UTF-8"><meta content="width=device-width, initial-scale=1" name="viewport"><script src="https://cdn.tailwindcss.com?plugins=typography" type="text/javascript"></script><script>tailwind.config = {
+  darkMode: "class",
+  content: ["./public/build/index.html", "./public/build/**/*.html", "./build/viewer.js"],
+  safelist: ['dark'],
+  theme: {
+    extend: {},
+    fontFamily: {
+      sans: ["Fira Sans", "-apple-system", "BlinkMacSystemFont", "sans-serif"],
+      serif: ["PT Serif", "serif"],
+      mono: ["Fira Mono", "monospace"]
+    }
+  },
+  variants: {
+    extend: {},
+  },
+  plugins: [],
+}
+</script><style type="text/tailwindcss">@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-size: 18px;
+  }
+  @media (max-width: 600px) {
+    html {
+      font-size: 16px;
+    }
+  }
+  .font-condensed { font-family: "Fira Sans Condensed", sans-serif; }
+  .font-inter     { font-family: "Inter", sans-serif; }
+  body {
+    @apply font-serif antialiased text-gray-900 sm:overscroll-y-none;
+  }
+  code, .code {
+    @apply font-mono text-sm text-gray-900 bg-slate-50 px-0.5 py-px rounded dark:bg-gray-800;
+  }
+  code::before, code::after { @apply content-none !important; }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-condensed font-bold mt-8 first:mt-0;
+  }
+  h1 { @apply text-4xl; }
+  h2 { @apply text-3xl; }
+  h3 { @apply text-2xl; }
+  h4 { @apply text-xl; }
+  h5 { @apply text-lg; }
+  h6 { @apply text-base; }
+
+  button { @apply focus:outline-none; }
+  strong { @apply font-bold; }
+  em     { @apply italic; }
+  pre    { @apply m-0 font-mono; }
+}
+
+/* Compatibility */
+/* --------------------------------------------------------------- */
+/* TODO: Verify which colors are in use and replace with Tailwind
+   colors accordingly. Move Nj-specific styles out of here. */
+
+:root {
+  --teal-color: #31afd0;
+  --dark-teal-color: #095960;
+  --near-black-color: #2e2e2c;
+  --red-color: #d64242;
+  --dark-blue-color: #1f2937;
+  --dark-blue-60-color: rgba(28, 42, 56, 0.6);
+  --gray-panel-color: rgba(239, 241, 245, 1.000);
+  --brand-color: var(--dark-blue-color);
+  --link-color: #5046e4;
+  --command-bar-selected-color: var(--teal-color);
+}
+
+.serif      { @apply font-serif; }
+.sans-serif { @apply font-sans; }
+.monospace  { @apply font-mono; }
+.inter      { @apply font-inter; }
+
+.border-color-teal { border-color: var(--dark-teal-color); }
+.teal { color: var(--teal-color); }
+.bg-dark-blue { background: var(--dark-blue-color); }
+.bg-dark-blue-60 { background: rgba(28, 42, 56, 0.6); }
+.bg-gray-panel { background: var(--gray-panel-color); }
+.text-dark-blue  { color: var(--dark-blue-color); }
+.text-dark-blue-60 { color: var(--dark-blue-60-color); }
+.border-dark-blue-30 { border-color: rgba(28, 42, 56, 0.6); }
+.text-brand { color: var(--dark-blue-color); }
+.bg-brand { background: var(--dark-blue-color); }
+.text-selected { color: white; }
+.red { color: var(--red-color); }
+
+/* Disclose Button */
+/* --------------------------------------------------------------- */
+
+.disclose {
+  @apply content-none border-solid cursor-pointer inline-block relative mr-[3px] top-[-2px] transition-all;
+  border-color: var(--near-black-color) transparent;
+  border-width: 6px 4px 0;
+}
+.disclose:hover {
+  border-color: var(--near-black-color) transparent;
+}
+.dark .disclose,
+.dark .disclose:hover {
+  border-color: white transparent;
+}
+.disclose.collapsed {
+  @apply rotate-[-90deg];
+}
+
+/* Layout */
+/* --------------------------------------------------------------- */
+
+.page {
+  @apply max-w-5xl mx-auto px-12 box-border flex-shrink-0;
+}
+.max-w-prose { @apply max-w-[46rem] !important; }
+.max-w-wide  { @apply max-w-3xl !important; }
+
+/* List Styles */
+/* --------------------------------------------------------------- */
+
+.task-list-item + .task-list-item,
+.viewer-markdown ul .task-list-item ul {
+  @apply mt-1;
+}
+
+/* compact TOC */
+.viewer-markdown .toc ul {
+  list-style: none;
+  @apply my-0;
+}
+
+/* Code Viewer */
+/* --------------------------------------------------------------- */
+
+.viewer-code {
+  @apply font-mono bg-slate-100 rounded-sm text-sm mt-4 overflow-x-auto dark:bg-gray-800;
+}
+.viewer-code .cm-content {
+  @apply py-4 px-8;
+}
+@media (min-width: 960px){
+  .viewer-notebook .viewer-code .cm-content {
+    @apply py-4 pl-12;
+  }
+}
+/* Don’t show focus outline when double-clicking cell in Safari */
+.cm-scroller { @apply focus:outline-none; }
+
+/* Syntax Highlighting */
+/* --------------------------------------------------------------- */
+
+.inspected-value { @apply text-xs font-mono leading-[1.25rem]; }
+.cmt-strong, .cmt-heading { @apply font-bold; }
+.cmt-emphasis { @apply italic; }
+.cmt-strikethrough { @apply line-through; }
+.cmt-link { @apply underline; }
+.untyped-value { @apply whitespace-nowrap; }
+
+.cm-editor, .cmt-default, .viewer-result {
+  @apply text-slate-800 dark:text-slate-300;
+}
+.cmt-keyword {
+  @apply text-purple-800 dark:text-pink-400;
+}
+.cmt-atom, .cmt-bool, .cmt-url, .cmt-contentSeparator, .cmt-labelName {
+  @apply text-blue-900 dark:text-blue-300;
+}
+.cmt-inserted, .cmt-literal {
+  @apply text-emerald-700 dark:text-emerald-200;
+}
+.cmt-string, .cmt-deleted {
+  @apply text-rose-700 dark:text-sky-300;
+}
+.cmt-regexp, .cmt-escape {
+  @apply text-orange-500 dark:text-orange-300;
+}
+.cmt-variableName {
+  @apply text-blue-800 dark:text-sky-300;
+}
+.cmt-typeName, .cmt-namespace {
+  @apply text-emerald-600 dark:text-emerald-300;
+}
+.cmt-className {
+  @apply text-teal-600 dark:text-teal-200;
+}
+.cmt-macroName {
+  @apply text-teal-700 dark:text-teal-200;
+}
+.cmt-propertyName {
+  @apply text-blue-700 dark:text-blue-200;
+}
+.cmt-comment {
+  @apply text-slate-500 dark:text-slate-400;
+}
+.cmt-meta {
+  @apply text-slate-600 dark:text-slate-400;
+}
+.cmt-invalid {
+  @apply text-red-500 dark:text-red-300;
+}
+
+.result-data {
+  @apply font-mono text-sm overflow-x-auto whitespace-nowrap leading-normal;
+}
+.result-data::-webkit-scrollbar, .path-nav::-webkit-scrollbar {
+  @apply h-0;
+}
+.result-data-collapsed {
+  @apply whitespace-nowrap;
+}
+.result-data-field {
+  @apply ml-4 whitespace-nowrap;
+}
+.result-data-field-link{
+  @apply ml-4 whitespace-nowrap cursor-pointer;
+}
+.result-data-field-link:hover {
+  @apply text-black bg-black/5;
+}
+.result-text-empty {
+  color: rgba(0,0,0,.3);
+}
+.browsify-button:hover {
+  box-shadow: -2px 0 0 2px #edf2f7;
+}
+
+/* Prose */
+/* --------------------------------------------------------------- */
+
+.viewer-notebook,
+.viewer-markdown {
+  @apply prose
+    dark:prose-invert
+    prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline
+    dark:prose-a:text-blue-300
+    prose-p:mt-4 prose-p:leading-snug
+    prose-ol:mt-4 prose-ol:mb-6 prose-ol:leading-snug
+    prose-ul:mt-4 prose-ul:mb-6 prose-ul:leading-snug
+    prose-blockquote:mt-4 prose-blockquote:leading-snug
+    prose-hr:mt-6 prose-hr:border-t-2 prose-hr:border-solid prose-hr:border-slate-200
+    prose-figure:mt-4
+    prose-figcaption:mt-2 prose-figcaption:text-xs
+    prose-headings:mb-6
+    prose-th:mb-0
+    prose-img:mb-0
+    prose-code:font-medium prose-code:bg-slate-100
+    max-w-none;
+}
+.viewer-markdown li > p {
+  @apply inline;
+}
+
+/* Todo Lists */
+/* --------------------------------------------------------------- */
+
+.contains-task-list {
+  @apply pl-6 list-none;
+}
+.contains-task-list li p {
+  @apply inline m-0;
+}
+.contains-task-list input[type="checkbox"] {
+  @apply appearance-none h-4 w-4 rounded border border-slate-200 relative mr-[0.3rem] ml-[-1.5rem] top-[0.15rem];
+}
+.contains-task-list input[type="checkbox"]:checked {
+  @apply border-indigo-600 bg-indigo-600 bg-no-repeat bg-contain;
+  background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3e%3c/svg%3e");
+}
+
+/* Markdown TOC */
+/* --------------------------------------------------------------- */
+
+.viewer-markdown .toc      { @apply mt-4; }
+.viewer-markdown h1 + .toc { @apply mt-8; }
+
+.viewer-markdown .toc h1,
+.viewer-markdown .toc h2,
+.viewer-markdown .toc h3,
+.viewer-markdown .toc h4,
+.viewer-markdown .toc h5,
+.viewer-markdown .toc h6 {
+  @apply text-base text-indigo-600 font-sans my-0;
+}
+.viewer-markdown .toc a {
+  @apply text-indigo-600 font-normal no-underline hover:underline;
+}
+.viewer-markdown .toc li    { @apply m-0; }
+.viewer-markdown .toc ul ul { @apply pl-4; }
+
+/* Notebook Spacing */
+/* --------------------------------------------------------------- */
+
+.viewer-notebook { @apply py-16; }
+#clerk-static-app .viewer-notebook { @apply pt-[0.8rem] pb-16; }
+.viewer-markdown *:first-child:not(.viewer-code) { @apply mt-0; }
+.viewer + .viewer { @apply mt-6; }
+.viewer-markdown + .viewer { @apply mt-3; }
+.viewer-markdown + .viewer-markdown { @apply mt-0; }
+
+/* Sidenotes */
+/* --------------------------------------------------------------- */
+
+.sidenote-ref {
+  @apply top-[-3px] inline-flex justify-center items-center w-[18px] h-[18px]
+    rounded-full bg-slate-100 border border-slate-300 hover:bg-slate-200 hover:border-slate-300
+    m-0 ml-[4px] cursor-pointer;
+}
+.sidenote {
+  @apply hidden float-left clear-both mx-[2.5%] my-4 text-xs relative w-[95%];
+}
+.sidenote-ref.expanded + .sidenote {
+  @apply block;
+}
+@media (min-width: 860px) {
+  .sidenote-ref {
+    @apply top-[-0.5em] w-auto h-auto inline border-0 bg-transparent m-0 pointer-events-none;
+  }
+  .sidenote sup { @apply inline; }
+  .viewer-markdown .contains-sidenotes p { @apply max-w-[65%]; }
+  .viewer-markdown p .sidenote {
+    @apply mr-[-54%] mt-[0.2rem] w-1/2 float-right clear-right relative block;
+  }
+}
+.viewer-code + .viewer:not(.viewer-markdown):not(.viewer-code):not(.viewer-code-folded),
+.viewer-code-folded + .viewer:not(.viewer-markdown):not(.viewer-code):not(.viewer-code-folded),
+.viewer-result + .viewer-result {
+  @apply mt-2;
+}
+.viewer-result {
+  @apply leading-tight;
+}
+@media (min-width: 768px) {
+  .devcard-desc > div {
+    @apply max-w-full m-0;
+  }
+}
+
+/* Command Palette */
+/* --------------------------------------------------------------- */
+
+.nj-commands-input {
+  @apply bg-transparent text-white;
+}
+.nj-context-menu-item:hover:not([disabled]) {
+  @apply cursor-pointer;
+  background-color: rgba(255,255,255,.14);
+}
+
+/* Devdocs */
+/* --------------------------------------------------------------- */
+
+.logo, .logo-white {
+  @apply block indent-[-999em];
+  background: url(/images/nextjournal-logo.svg) center center no-repeat;
+}
+.devdocs-body {
+  @apply font-inter;
+}
+
+/* Workarounds */
+/* --------------------------------------------------------------- */
+
+/* Fixes vega viewer resizing into infinity */
+.vega-embed .chart-wrapper { @apply h-auto !important; }
+/* fixes fraction separators being overridden by tw’s border-color */
+.katex * { @apply border-black; }
+</style><script src="https://storage.googleapis.com/nextjournal-cas-eu/data/3CPNo7S9omSWo3YNVD5NUgESYcUv2SoLZaFMLHs6Rv8fmdmW2uc7k5DnKo6fQWqe39SXqo8EAKdicZwGbrYgKSAe" type="text/javascript"></script><link href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" rel="stylesheet" type="text/css"><link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;700&amp;family=Fira+Mono:wght@400;700&amp;family=Fira+Sans+Condensed:ital,wght@0,700;1,700&amp;family=Fira+Sans:ital,wght@0,400;0,500;0,700;1,400;1,500;1,700&amp;family=PT+Serif:ital,wght@0,400;0,700;1,400;1,700&amp;display=swap" rel="stylesheet" type="text/css"></head><body><div id="clerk-static-app"></div><script>let viewer = nextjournal.clerk.sci_viewer
+let app = nextjournal.clerk.static_app
+let opts = viewer.read_string("{:paths [\"notebooks/osc_spirograph.clj\"], :browse? false, :bundle? false, :path->doc {\"notebooks/osc_spirograph.clj\" {:nextjournal/value {:blocks [{:path [], :nextjournal/value [:div.viewer-markdown [#viewer-eval v/inspect {:path [], :nextjournal/value [\"h1\" {:id \"%EA%A9%9C%20OSC%20Spirograph\"} [#viewer-eval v/inspect {:path [], :nextjournal/value [:span \"꩜ OSC Spirograph\"], :nextjournal/viewer {:name :html, :render-fn #viewer-fn v/html}}]], :nextjournal/viewer {:name :html, :render-fn #viewer-fn v/html}}]], :nextjournal/viewer {:name :html, :render-fn #viewer-fn v/html}} {:nextjournal/value \"(ns osc-spirograph\\n  (:require [nextjournal.clerk :as clerk])\\n  (:import (com.illposed.osc ConsoleEchoServer OSCMessageListener OSCMessageEvent OSCMessage)\\n           (com.illposed.osc.messageselector JavaRegexAddressMessageSelector)\\n           (org.slf4j LoggerFactory)\\n           (java.net InetSocketAddress)))\", :nextjournal/viewer :code} {:nextjournal/viewer :clerk/result, :nextjournal/value {:nextjournal/edn \"{:path [], :nextjournal/value nil, :nextjournal/viewer {:render-fn #viewer-fn (fn [_] (v/html [:span.cmt-default.inspected-value \\\"nil\\\"]))}}\"}, :path []} {:path [], :nextjournal/value [:div.viewer-markdown [#viewer-eval v/inspect {:path [], :nextjournal/value [:p [#viewer-eval v/inspect {:path [], :nextjournal/value [:span \"We start by initializing an OSC Server. We're overlaying an extra broadcast (clojure tap) of received OSC messages on top of a simple echo server. We wrap it in a future it only for clerk's \"], :nextjournal/viewer {:name :html, :render-fn #viewer-fn v/html}}] [#viewer-eval v/inspect {:path [], :nextjournal/value [:code [#viewer-eval v/inspect {:path [], :nextjournal/value [:span \"build-static-app!\"], :nextjournal/viewer {:name :html, :render-fn #viewer-fn v/html}}]], :nextjournal/viewer {:name :html, :render-fn #viewer-fn v/html}}] [#viewer-eval v/inspect {:path [], :nextjournal/value [:span \" not to hang.\"], :nextjournal/viewer {:name :html, :render-fn #viewer-fn v/html}}]], :nextjournal/viewer {:name :html, :render-fn #viewer-fn v/html}}]], :nextjournal/viewer {:name :html, :render-fn #viewer-fn v/html}} {:nextjournal/value \"(when-not (System/getenv \\\"NOSC\\\")\\n  (defonce osc\\n    (doto (proxy [ConsoleEchoServer]\\n                 [(InetSocketAddress. \\\"0.0.0.0\\\" 6669)\\n                  (LoggerFactory/getLogger ConsoleEchoServer)]\\n            (start []\\n              (.. ^ConsoleEchoServer this\\n                  getDispatcher\\n                  (addListener (JavaRegexAddressMessageSelector. \\\".*\\\")\\n                               (reify\\n                                 OSCMessageListener\\n                                 (^void acceptMessage [_this ^OSCMessageEvent event]\\n                                   (tap> (.getMessage event))))))\\n              (proxy-super start)))\\n      .start)))\", :nextjournal/viewer :code} {:nextjournal/viewer :clerk/result, :nextjournal/value {:nextjournal/edn \"{:path [], :nextjournal/value \\\"#object[clojure.lang.Var$Unbound 0x3c9b9e92 \\\\\\\"Unbound: #'osc-spirograph/osc\\\\\\\"]\\\", :nextjournal/viewer {:render-fn #viewer-fn (fn [x] (v/html [:span.inspected-value.whitespace-nowrap.cmt-default x]))}}\"}, :path []} {:path [], :nextjournal/value [:div.viewer-markdown [#viewer-eval v/inspect {:path [], :nextjournal/value [:p [#viewer-eval v/inspect {:path [], :nextjournal/value [:span \"The following viewer is used to sync models between clojure and the client.\"], :nextjournal/viewer {:name :html, :render-fn #viewer-fn v/html}}]], :nextjournal/viewer {:name :html, :render-fn #viewer-fn v/html}}]], :nextjournal/viewer {:name :html, :render-fn #viewer-fn v/html}} {:nextjournal/value \"^{::clerk/no-cache true\\n  ::clerk/viewer {:fetch-fn (fn [_ x] x)\\n                  :transform-fn (fn [{::clerk/keys [var-from-def]}] {:value @@var-from-def})\\n                  :render-fn '(fn [{:keys [value]}]\\n                                (defonce model (atom nil))\\n                                (pr-str (swap! model\\n                                               (partial merge-with (fn [old new] (if (vector? old) (mapv merge old new) new)))\\n                                               value)))}}\\n(def model\\n  (atom {:mode 0\\n         :rotors [{:r 1.0 :omega 0.08 :color \\\"#f43f5e\\\"}\\n                  {:r 0.5 :omega -0.23 :color \\\"#65a30d\\\"}\\n                  {:r 0.25 :omega 0.5 :color \\\"#4338ca\\\"}]}))\", :nextjournal/viewer :code} {:nextjournal/viewer :clerk/result, :nextjournal/value {:nextjournal/edn \"{:path [], :nextjournal/value {:value {:mode 0, :rotors [{:r 1.0, :omega 0.08, :color \\\"#f43f5e\\\"} {:r 0.5, :omega -0.23, :color \\\"#65a30d\\\"} {:r 0.25, :omega 0.5, :color \\\"#4338ca\\\"}]}}, :nextjournal/viewer {:render-fn #viewer-fn (fn [{:keys [value]}] (defonce model (atom nil)) (pr-str (swap! model (partial merge-with (fn [old new] (if (vector? old) (mapv merge old new) new))) value)))}}\"}, :path []} {:path [], :nextjournal/value [:div.viewer-markdown [#viewer-eval v/inspect {:path [], :nextjournal/value [:p [#viewer-eval v/inspect {:path [], :nextjournal/value [:span \"Update model and recompute the notebook.\"], :nextjournal/viewer {:name :html, :render-fn #viewer-fn v/html}}]], :nextjournal/viewer {:name :html, :render-fn #viewer-fn v/html}}]], :nextjournal/viewer {:name :html, :render-fn #viewer-fn v/html}} {:nextjournal/value \"(defn update-model! [f]\\n  (swap! model f)\\n  (binding [*ns* (find-ns 'osc-spirograph)]\\n    (clerk/recompute!)))\", :nextjournal/viewer :code} {:nextjournal/viewer :clerk/result, :nextjournal/value {:nextjournal/edn \"{:path [], :nextjournal/value \\\"c_spirograph$update_model_BANG_ 0x41b78022 \\\\\\\"osc_spirograph$update_model_BANG_@41b78022\\\\\\\"\\\", :nextjournal/viewer {:name :fn, :render-fn #viewer-fn (fn [x] (v/html [:span.inspected-value [:span.cmt-meta \\\"#function\\\"] \\\"[\\\" x \\\"]\\\"]))}}\", :nextjournal/viewer {:name :fn}}, :path []} {:path [], :nextjournal/value [:div.viewer-markdown [#viewer-eval v/inspect {:path [], :nextjournal/value [:p [#viewer-eval v/inspect {:path [], :nextjournal/value [:span \"We configured our OSC message arguments to always be a vector of the form\"], :nextjournal/viewer {:name :html, :render-fn #viewer-fn v/html}}] [#viewer-eval v/inspect {:path [], :nextjournal/value [:span \" \"], :nextjournal/viewer {:name :html, :render-fn #viewer-fn v/html}}] [#viewer-eval v/inspect {:path [], :nextjournal/value [:span \"[value & path]\"], :nextjournal/viewer {:name :html, :render-fn #viewer-fn v/html}}] [#viewer-eval v/inspect {:path [], :nextjournal/value [:span \" \"], :nextjournal/viewer {:name :html, :render-fn #viewer-fn v/html}}] [#viewer-eval v/inspect {:path [], :nextjournal/value [:span \"where value is changed by the controller we're interacting with, while the tail of the arguments is a valid path in the model above. In this example we're ignoring the OSC message address.\"], :nextjournal/viewer {:name :html, :render-fn #viewer-fn v/html}}]], :nextjournal/viewer {:name :html, :render-fn #viewer-fn v/html}}] [#viewer-eval v/inspect {:path [], :nextjournal/value [:p [#viewer-eval v/inspect {:path [], :nextjournal/value [:span \"This is how our interface is looking \"], :nextjournal/viewer {:name :html, :render-fn #viewer-fn v/html}}] [#viewer-eval v/inspect {:path [], :nextjournal/value [:img {:src \"https://github.com/zampino/osc-spirograph/tree/main/spirograph.png\", :alt \"\"}], :nextjournal/viewer {:name :html, :render-fn #viewer-fn v/html}}] [#viewer-eval v/inspect {:path [], :nextjournal/value [:span \".\"], :nextjournal/viewer {:name :html, :render-fn #viewer-fn v/html}}]], :nextjournal/viewer {:name :html, :render-fn #viewer-fn v/html}}]], :nextjournal/viewer {:name :html, :render-fn #viewer-fn v/html}} {:nextjournal/value \"(defn osc->map [^OSCMessage m]\\n  (let [[v & path] (map #(cond-> % (string? %) keyword) (.getArguments m))]\\n    {:value v :path path}))\", :nextjournal/viewer :code} {:nextjournal/viewer :clerk/result, :nextjournal/value {:nextjournal/edn \"{:path [], :nextjournal/value \\\"c_spirograph$osc__GT_map 0x21b8e988 \\\\\\\"osc_spirograph$osc__GT_map@21b8e988\\\\\\\"\\\", :nextjournal/viewer {:name :fn, :render-fn #viewer-fn (fn [x] (v/html [:span.inspected-value [:span.cmt-meta \\\"#function\\\"] \\\"[\\\" x \\\"]\\\"]))}}\", :nextjournal/viewer {:name :fn}}, :path []} {:nextjournal/value \"(defn osc-message-handler [osc-message]\\n  (let [{:keys [path value]} (osc->map osc-message)]\\n    (update-model! #(assoc-in % path value))))\", :nextjournal/viewer :code} {:nextjournal/viewer :clerk/result, :nextjournal/value {:nextjournal/edn \"{:path [], :nextjournal/value \\\"c_spirograph$osc_message_handler 0x46329e85 \\\\\\\"osc_spirograph$osc_message_handler@46329e85\\\\\\\"\\\", :nextjournal/viewer {:name :fn, :render-fn #viewer-fn (fn [x] (v/html [:span.inspected-value [:span.cmt-meta \\\"#function\\\"] \\\"[\\\" x \\\"]\\\"]))}}\", :nextjournal/viewer {:name :fn}}, :path []} {:path [], :nextjournal/value [:div.viewer-markdown [#viewer-eval v/inspect {:path [], :nextjournal/value [:p [#viewer-eval v/inspect {:path [], :nextjournal/value [:span \"This needs to be evaluated just once (Clerk caching should take care of this, why do I need the defonce?).\"], :nextjournal/viewer {:name :html, :render-fn #viewer-fn v/html}}]], :nextjournal/viewer {:name :html, :render-fn #viewer-fn v/html}}]], :nextjournal/viewer {:name :html, :render-fn #viewer-fn v/html}} {:nextjournal/value \"(defonce tapped\\n  (add-tap osc-message-handler))\", :nextjournal/viewer :code} {:nextjournal/viewer :clerk/result, :nextjournal/value {:nextjournal/edn \"{:path [], :nextjournal/value nil, :nextjournal/viewer {:render-fn #viewer-fn (fn [_] (v/html [:span.cmt-default.inspected-value \\\"nil\\\"]))}}\"}, :path []} {:nextjournal/value \"^{::clerk/visibility :fold ::clerk/viewer :hide-result}\\n(def spirograph-viewer\\n  {:render-fn '(fn [_]\\n                 (v/html\\n                   [v/with-d3-require {:package \\\"two.js@0.7.13\\\"}\\n                    (fn [Two]\\n                      (reagent/with-let\\n                        [Vector (.-Vector Two) Line (.-Line Two) Group (.-Group Two)\\n                         world-matrix (.. Two -Utils -getComputedMatrix)\\n                         R 200 MAXV 1000 T (* js/Math.PI 0.05)\\n                         rotor-group (fn [drawing parent {:keys [r color]}]\\n                                       (let [G (doto (Group.)\\n                                                 (j/assoc! :position\\n                                                           (j/get-in parent [:children 0 :vertices 1]\\n                                                                     (Vector. (/ (.-width drawing) 2)\\n                                                                              (/ (.-height drawing) 2)))))]\\n                                         (.add parent G)\\n                                         (.add G (doto (Line. 0.0 0.0 (* r R) 0.0)\\n                                                   (j/assoc! :linewidth 7)\\n                                                   (j/assoc! :stroke color)\\n                                                   (j/assoc! :cap \\\"round\\\")\\n                                                   ))\\n                                         G))\\n                         build-rotors (fn [{:as m :keys [drawing]}]\\n                                        (update m :rotors\\n                                                #(:rotors (reduce\\n                                                            (fn [{:as acc :keys [parent-group]} params]\\n                                                              (let [g (rotor-group drawing parent-group params)]\\n                                                                (-> acc\\n                                                                    (update :rotors conj (assoc params :group g))\\n                                                                    (assoc :parent-group g))))\\n                                                            {:parent-group (.-scene drawing) :rotors []}\\n                                                            %))))\\n                         update-rotor! (fn [{:keys [r omega group]} tdelta]\\n                                         (when group\\n                                           (j/assoc-in! group [:children 0 :vertices 1 :x] (* r R))\\n                                           (j/update! group :rotation + (* T omega tdelta))))\\n                         build-curve (fn [{:as m :keys [drawing]}]\\n                                       (assoc m :curve\\n                                                (doto (.makeCurve drawing)\\n                                                  (j/assoc! :closed false)\\n                                                  (j/assoc! :stroke \\\"#5b21b6\\\")\\n                                                  (j/assoc! :linewidth 5)\\n                                                  (j/assoc! :opacity 0.8)\\n                                                  .noFill)))\\n                         pen-position (fn [{:keys [rotors]}]\\n                                        (let [{:keys [r group]} (last rotors)]\\n                                          (.copy (Vector.)\\n                                                 (-> group world-matrix (.multiply (* r R) 0.0 1.0)))))\\n                         draw-curve! (fn [{:as model :keys [drawing mode curve]} tdelta]\\n                                       (when curve\\n                                         (let [vxs (.-vertices curve) size (.-length vxs)]\\n                                           (case mode\\n                                             0 ;; spirograph\\n                                             (.push vxs (pen-position model))\\n                                             1 ;; fourier\\n                                             (doto vxs\\n                                               (.push (j/assoc! (pen-position model) :x (/ (.-width drawing) 2)))\\n                                               (.forEach (fn [p] (j/update! p :x - tdelta))))\\n                                             nil)\\n                                           (when (< MAXV size) (.splice vxs 0 (- size MAXV))))))\\n                         apply-model (fn [{:as model :keys [clean? curve drawing rotors]} t tdelta]\\n                                       (doseq [rot rotors] (update-rotor! rot tdelta))\\n                                       ;; draw curve at next tick\\n                                       (js/requestAnimationFrame #(draw-curve! model tdelta))\\n                                       (when clean? (.remove drawing curve))\\n                                       (cond-> model clean? build-curve))\\n                         update! (fn [frames tdelta] (swap! model apply-model (* 0.09 frames) (* 0.09 tdelta)))\\n                         refn (fn [el]\\n                                (when (and el (not (:drawing @model)))\\n                                  (js/console.log :boot el)\\n                                  (let [drawing (Two. (j/obj :type (.. Two -Types -svg)\\n                                                             :autostart true\\n                                                             :fitted true))]\\n                                    (.appendTo drawing el)\\n                                    (.bind drawing \\\"update\\\" update!)\\n                                    (swap! model #(-> %\\n                                                      (assoc :drawing drawing)\\n                                                      build-rotors build-curve)))))]\\n                        [:div {:ref refn\\n                               :style {:width \\\"100%\\\" :height \\\"800px\\\"}}]))]))})\", :nextjournal/viewer :code-folded} {:path [], :nextjournal/value [:div.viewer-markdown [#viewer-eval v/inspect {:path [], :nextjournal/value [:p [#viewer-eval v/inspect {:path [], :nextjournal/value [:span \"this value is only used to attach the definition of our spirograph component in the reagent context.\"], :nextjournal/viewer {:name :html, :render-fn #viewer-fn v/html}}]], :nextjournal/viewer {:name :html, :render-fn #viewer-fn v/html}}]], :nextjournal/viewer {:name :html, :render-fn #viewer-fn v/html}} {:nextjournal/viewer :clerk/result, :nextjournal/value {:nextjournal/edn \"{:path [], :nextjournal/value #object[java.lang.Object 0x110be378 \\\"java.lang.Object@110be378\\\"], :nextjournal/viewer {:render-fn #viewer-fn (fn [_] (v/html [v/with-d3-require {:package \\\"two.js@0.7.13\\\"} (fn [Two] (reagent/with-let [Vector (.-Vector Two) Line (.-Line Two) Group (.-Group Two) world-matrix (.. Two -Utils -getComputedMatrix) R 200 MAXV 1000 T (* js/Math.PI 0.05) rotor-group (fn [drawing parent {:keys [r color]}] (let [G (doto (Group.) (j/assoc! :position (j/get-in parent [:children 0 :vertices 1] (Vector. (/ (.-width drawing) 2) (/ (.-height drawing) 2)))))] (.add parent G) (.add G (doto (Line. 0.0 0.0 (* r R) 0.0) (j/assoc! :linewidth 7) (j/assoc! :stroke color) (j/assoc! :cap \\\"round\\\"))) G)) build-rotors (fn [{:as m, :keys [drawing]}] (update m :rotors (fn* [%1] (:rotors (reduce (fn [{:as acc, :keys [parent-group]} params] (let [g (rotor-group drawing parent-group params)] (-> acc (update :rotors conj (assoc params :group g)) (assoc :parent-group g)))) {:parent-group (.-scene drawing), :rotors []} %1))))) update-rotor! (fn [{:keys [r omega group]} tdelta] (when group (j/assoc-in! group [:children 0 :vertices 1 :x] (* r R)) (j/update! group :rotation + (* T omega tdelta)))) build-curve (fn [{:as m, :keys [drawing]}] (assoc m :curve (doto (.makeCurve drawing) (j/assoc! :closed false) (j/assoc! :stroke \\\"#5b21b6\\\") (j/assoc! :linewidth 5) (j/assoc! :opacity 0.8) .noFill))) pen-position (fn [{:keys [rotors]}] (let [{:keys [r group]} (last rotors)] (.copy (Vector.) (-> group world-matrix (.multiply (* r R) 0.0 1.0))))) draw-curve! (fn [{:as model, :keys [drawing mode curve]} tdelta] (when curve (let [vxs (.-vertices curve) size (.-length vxs)] (case mode 0 (.push vxs (pen-position model)) 1 (doto vxs (.push (j/assoc! (pen-position model) :x (/ (.-width drawing) 2))) (.forEach (fn [p] (j/update! p :x - tdelta)))) nil) (when (< MAXV size) (.splice vxs 0 (- size MAXV)))))) apply-model (fn [{:as model, :keys [clean? curve drawing rotors]} t tdelta] (doseq [rot rotors] (update-rotor! rot tdelta)) (js/requestAnimationFrame (fn* [] (draw-curve! model tdelta))) (when clean? (.remove drawing curve)) (cond-> model clean? build-curve)) update! (fn [frames tdelta] (swap! model apply-model (* 0.09 frames) (* 0.09 tdelta))) refn (fn [el] (when (and el (not (:drawing (clojure.core/deref model)))) (js/console.log :boot el) (let [drawing (Two. (j/obj :type (.. Two -Types -svg) :autostart true :fitted true))] (.appendTo drawing el) (.bind drawing \\\"update\\\" update!) (swap! model (fn* [%1] (-> %1 (assoc :drawing drawing) build-rotors build-curve))))))] [:div {:ref refn, :style {:width \\\"100%\\\", :height \\\"800px\\\"}}]))]))}}\"}, :path [], :nextjournal/width :full}], :toc {:type :toc, :children [{:type :toc, :content [{:type :text, :text \"꩜ OSC Spirograph\"}], :heading-level 1}], :mode false}, :title \"꩜ OSC Spirograph\"}, :nextjournal/viewer :clerk/notebook, :scope {:namespace :osc-spirograph}}}, :path->url {\"notebooks/osc_spirograph.clj\" \"notebooks/osc_spirograph.html\"}, :current-path \"notebooks/osc_spirograph.clj\"}")
+app.init(opts)
+</script></body></html>
