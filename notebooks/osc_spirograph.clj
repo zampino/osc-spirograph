@@ -1,12 +1,15 @@
 ;; # ꩜ OSC Spirograph
+^{:nextjournal.clerk/viewer :hide-result}
 (ns osc-spirograph
-  (:require [nextjournal.clerk :as clerk])
+  (:require [nextjournal.clerk :as clerk]
+            [clojure.java.io :as io])
   (:import (com.illposed.osc ConsoleEchoServer OSCMessageListener OSCMessageEvent OSCMessage)
            (com.illposed.osc.messageselector JavaRegexAddressMessageSelector)
            (org.slf4j LoggerFactory)
-           (java.net InetSocketAddress)))
+           (java.net InetSocketAddress)
+           (javax.imageio ImageIO)))
 
-;; We start by initializing an OSC Server. We're overlaying an extra broadcast (via clojure tap) of received OSC messages on top of the simple echo server provided by the [JavaOSC library](https://github.com/hoijui/JavaOSC).
+;; We start by initializing an OSC Server instance. We're overlaying an extra broadcast (via clojure tap) of received OSC messages on top of the simple echo server provided by the [JavaOSC library](https://github.com/hoijui/JavaOSC). This is Clojure/Java interop at its best :-)
 (when-not (System/getenv "NOSC")
   (defonce osc
     (doto (proxy [ConsoleEchoServer]
@@ -35,9 +38,9 @@
                                                value)))}}
 (def model
   (atom {:mode 0
-         :rotors [{:r 1.0 :omega 0.08 :color "#f43f5e"}
-                  {:r 0.5 :omega -0.23 :color "#65a30d"}
-                  {:r 0.25 :omega 0.5 :color "#4338ca"}]}))
+         :rotors [{:r 1.0 :omega 0.2 :color "#f43f5e"}
+                  {:r 0.4 :omega -0.35 :color "#65a30d"}
+                  {:r 0.125 :omega 0.4 :color "#4338ca"}]}))
 
 ;; Update model and recompute the notebook.
 
@@ -50,7 +53,9 @@
 ;;     [value & path]
 ;; where value is changed by the controller we're interacting with, while the tail of the arguments is a valid path in the model above. In this example we're ignoring the OSC message address.
 ;;
-;; This is how our interface is looking ![interface](https://github.com/zampino/osc-spirograph/tree/main/spirograph.png).
+;; This is how our interface is looking
+^{::clerk/visibility :hide}
+(ImageIO/read (io/resource "spirograph.png"))
 
 (defn osc->map [^OSCMessage m]
   (let [[v & path] (map #(cond-> % (string? %) keyword) (.getArguments m))]
@@ -158,18 +163,12 @@
   @model
   (clerk/serve! {:port 7779})
   (clerk/clear-cache!)
-  (clerk/build-static-app! {:browse? false
-                            :bundle? false
-                            :paths ["notebooks/osc_spirograph.clj"]})
-
-  ;;this needs be registered just once
 
   (remove-tap osc-message-handler)
 
   (.start osc)
   (.isListening osc)
   (.stopListening osc)
-
 
   (update-model (fn [m] (assoc-in m [:rotors 0 :omega] 0.9)))
   (update-model (fn [m] (assoc-in m [:rotors 1 :omega] -0.9)))
@@ -179,7 +178,4 @@
   (update-model (fn [m] (assoc-in m [:mode] :spirograph)))
 
   (swap! model assoc-in [:rotors 0 :r 0.5])
-
-  (System/getenv "HOME")
-
   )
