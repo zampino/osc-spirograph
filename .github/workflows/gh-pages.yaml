@@ -1,0 +1,30 @@
+name: GitHub Pages
+on:
+  push:
+    branches:
+      - main
+jobs:
+  publish:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: 🛎 Checkout
+        uses: actions/checkout@v3
+
+      - name: 🔧 Install clojure tools
+        uses: DeLaGuardo/setup-clojure@4.0
+        with:
+          cli: 1.10.3.1087
+
+      - name: 🔨 Build static site
+        run: NOSC=true clojure -X:nextjournal/clerk
+
+      - name: 🎭 Rename Index
+        run: |
+          cd public/build/notebooks
+          mv osc_spirograph.html index.html
+
+      - name: 🚀 Deploy
+        uses: JamesIves/github-pages-deploy-action@v4.3.0
+        with:
+          branch: main
+          publish_dir: ./public/build/notebooks

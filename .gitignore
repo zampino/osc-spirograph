@@ -1,0 +1,8 @@
+.clerk
+.cpcache
+.shadow-cljs
+.idea
+.DS_Store
+node_modules
+*.iml
+public/js
