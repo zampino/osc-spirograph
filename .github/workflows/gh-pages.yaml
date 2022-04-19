@@ -21,6 +21,7 @@ jobs:
           path: |
             ~/.m2
             ~/.gitlibs
+          key: "key"
 
       - name: 🔨 Build static site
         run: NOSC=true clojure -X:nextjournal/clerk
