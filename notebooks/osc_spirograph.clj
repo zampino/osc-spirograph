@@ -33,13 +33,18 @@
                   :transform-fn (fn [{::clerk/keys [var-from-def]}] {:value @@var-from-def})
                   :render-fn '(fn [{:keys [value]}]
                                 (defonce model (atom nil))
-                                (pr-str (swap! model
-                                               (partial merge-with (fn [old new] (if (vector? old) (mapv merge old new) new)))
-                                               value)))}}
+                                (let [current (swap! model
+                                                     (partial merge-with (fn [old new] (if (vector? old) (mapv merge old new) new)))
+                                                     value)]
+                                  (-> current
+                                      (update :rotors (partial mapv #(dissoc % :group)))
+                                      (dissoc :drawing :curve))))}}
+
+;; This is the model representing the coefficients of our spirograph. Three harmonics with ampliture `r` and angular velocity `omega`.
 (def model
   (atom {:mode 0
-         :rotors [{:r 1.0 :omega 0.2 :color "#f43f5e"}
-                  {:r 0.4 :omega -0.35 :color "#65a30d"}
+         :rotors [{:r 0.9 :omega 0.2 :color "#f43f5e"}
+                  {:r 0.5 :omega -0.35 :color "#65a30d"}
                   {:r 0.125 :omega 0.4 :color "#4338ca"}]}))
 
 ;; Update model and recompute the notebook.
@@ -50,7 +55,9 @@
     (clerk/recompute!)))
 
 ;; We configured our OSC message arguments to always be a vector of the form
+;;
 ;;     [value & path]
+;;
 ;; where value is changed by the controller we're interacting with, while the tail of the arguments is a valid path in the model above. In this example we're ignoring the OSC message address.
 ;;
 ;; This is how our interface is looking
