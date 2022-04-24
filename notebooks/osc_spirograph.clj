@@ -13,7 +13,13 @@
            (java.net InetSocketAddress)
            (javax.imageio ImageIO)))
 
-;; We start by initializing an OSC Server instance. We're overlaying an extra broadcast (via clojure tap) of received OSC messages on top of the simple echo server provided by the [JavaOSC library](https://github.com/hoijui/JavaOSC). This is Clojure/Java interop at its best :-)
+;; By means of [TouchOSC](https://hexler.net/touchosc) we're building a simple
+;; touch interface looking like this
+
+^{::clerk/visibility :hide}
+(ImageIO/read (io/resource "spirograph.png"))
+
+;; In order to receive OSC messages, we start by initializing an OSC Server instance. We're overlaying an extra broadcast (via clojure tap) of received OSC messages on top of the simple echo server provided by the [JavaOSC library](https://github.com/hoijui/JavaOSC). This is Clojure/Java interop at its best :-)
 (when-not (System/getenv "NOSC")
   (defonce osc
     (doto (proxy [ConsoleEchoServer]
@@ -44,19 +50,15 @@
                                       (update :rotors (partial mapv #(dissoc % :group)))
                                       (dissoc :drawing :curve))))}}
 
-;; This is the model representing the coefficients of our spirograph. Three harmonics with ampliture `r` and angular velocity `omega`.
+;; This is the model representing the coefficients of our spirograph. Three "rotors" with ampliture `r` and frequency `omega`.
 (def model
   (atom {:mode 0
          :rotors [{:r 0.9 :omega 0.2 :color "#f43f5e"}
                   {:r 0.5 :omega -0.35 :color "#65a30d"}
                   {:r 0.125 :omega 0.4 :color "#4338ca"}]}))
 
-;; Update model and recompute the notebook.
-
-(defn update-model! [f]
-  (swap! model f)
-  (binding [*ns* (find-ns 'osc-spirograph)]
-    (clerk/recompute!)))
+;; the linear faders in the above UX will control the amplitude, while the radial controllers
+;; will control the frequencies
 
 ;; We configured our OSC message arguments to always be a vector of the form
 ;;
@@ -64,15 +66,16 @@
 ;;
 ;; where value is changed by the controller we're interacting with, while the tail of the arguments is a valid path in the model above. In this example we're ignoring the OSC message address.
 ;;
-;; This is how our interface is looking
-
-^{::clerk/visibility :hide}
-(ImageIO/read (io/resource "spirograph.png"))
-
 (defn osc->map [^OSCMessage m]
   (let [[v & path] (map #(cond-> % (string? %) keyword) (.getArguments m))]
     {:value (if (= :rotors (first path)) (float (/ v 100)) v)
      :path path}))
+
+;; a helper for updating our model and recomputing the notebook (without redoing all of Clerk static analysis).
+(defn update-model! [f]
+  (swap! model f)
+  (binding [*ns* (find-ns 'osc-spirograph)]
+    (clerk/recompute!)))
 
 (defn osc-message-handler [osc-message]
   (let [{:keys [path value]} (osc->map osc-message)]
@@ -169,7 +172,8 @@
                                :style {:width "100%" :height "800px"}}]))]))})
 
 
-;; this value is only used to attach the definition of our spirograph component in the reagent context.
+;; and finally our spinning wheels in place for a fourieristic drawing.
+
 ^{::clerk/width :full
   ::clerk/visibility :hide
   ::clerk/viewer spirograph-viewer}
@@ -187,12 +191,13 @@
   (.isListening osc)
   (.stopListening osc)
 
-  (update-model (fn [m] (assoc-in m [:rotors 0 :omega] 0.9)))
-  (update-model (fn [m] (assoc-in m [:rotors 1 :omega] -0.9)))
-  (update-model (fn [m] (assoc-in m [:rotors 2 :omega] 2.9)))
   (update-model (fn [m] (assoc-in m [:rotors 0 :r] 2.0)))
+  (update-model (fn [m] (assoc-in m [:rotors 1 :omega] 0.9)))
 
-  (update-model (fn [m] (assoc-in m [:mode] :spirograph)))
-
-  (swap! model assoc-in [:rotors 0 :r 0.5])
-  )
+  ;; nice models
+  (do
+    (reset! model
+            {:rotors [{:r 0.41, :omega 0.46, :color "#f43f5e"}
+                      {:r 0.71, :omega -0.44, :color "#65a30d"}
+                      {:r 0.6, :omega -0.45, :color "#4338ca"}]})
+    (clerk/recompute!)))
