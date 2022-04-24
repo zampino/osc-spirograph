@@ -1,5 +1,9 @@
 ;; # ꩜ OSC Spirograph
-^{:nextjournal.clerk/viewer :hide-result}
+;; This short notebook shows how to combine an [OSC](https://en.wikipedia.org/wiki/Open_Sound_Control)
+;; controller with vector graphic visualizations in Clerk. OSC is generally used for networking live multimedia
+;; devices and sound syntesizers, but as [noted a while ago by Joe Armstrong](https://joearms.github.io/published/2016-01-28-A-Badass-Way-To-Connect-Programs-Together.html) its
+;; simplicity makes it an interesting choice for exchanging data between machines.
+
 (ns osc-spirograph
   (:require [nextjournal.clerk :as clerk]
             [clojure.java.io :as io])
@@ -61,12 +65,14 @@
 ;; where value is changed by the controller we're interacting with, while the tail of the arguments is a valid path in the model above. In this example we're ignoring the OSC message address.
 ;;
 ;; This is how our interface is looking
+
 ^{::clerk/visibility :hide}
 (ImageIO/read (io/resource "spirograph.png"))
 
 (defn osc->map [^OSCMessage m]
   (let [[v & path] (map #(cond-> % (string? %) keyword) (.getArguments m))]
-    {:value v :path path}))
+    {:value (if (= :rotors (first path)) (float (/ v 100)) v)
+     :path path}))
 
 (defn osc-message-handler [osc-message]
   (let [{:keys [path value]} (osc->map osc-message)]
@@ -125,6 +131,9 @@
                                         (let [{:keys [r group]} (last rotors)]
                                           (.copy (Vector.)
                                                  (-> group world-matrix (.multiply (* r R) 0.0 1.0)))))
+                         ->color (fn [{:keys [rotors]}]
+                                   (let [[r g b] (map (comp js/Math.floor (partial * 200) :r) rotors)]
+                                     (str "rgb(" r "," g "," b ")")))
                          draw-curve! (fn [{:as model :keys [drawing mode curve]} tdelta]
                                        (when curve
                                          (let [vxs (.-vertices curve) size (.-length vxs)]
@@ -136,7 +145,8 @@
                                                (.push (j/assoc! (pen-position model) :x (/ (.-width drawing) 2)))
                                                (.forEach (fn [p] (j/update! p :x - tdelta))))
                                              nil)
-                                           (when (< MAXV size) (.splice vxs 0 (- size MAXV))))))
+                                           (when (< MAXV size) (.splice vxs 0 (- size MAXV)))
+                                           (j/assoc! curve :stroke (->color model)))))
                          apply-model (fn [{:as model :keys [clean? curve drawing rotors]} t tdelta]
                                        (doseq [rot rotors] (update-rotor! rot tdelta))
                                        ;; draw curve at next tick
@@ -167,9 +177,9 @@
 
 ^{::clerk/visibility :hide ::clerk/viewer :hide-result}
 (comment
-  @model
   (clerk/serve! {:port 7779})
   (clerk/clear-cache!)
+  @model
 
   (remove-tap osc-message-handler)
 
