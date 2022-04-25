@@ -197,7 +197,24 @@
   ;; nice models
   (do
     (reset! model
-            {:rotors [{:r 0.41, :omega 0.46, :color "#f43f5e"}
+            #_ {:mode 0
+                :rotors [{:r 0.41, :omega 0.46, :color "#f43f5e"}
                       {:r 0.71, :omega -0.44, :color "#65a30d"}
-                      {:r 0.6, :omega -0.45, :color "#4338ca"}]})
-    (clerk/recompute!)))
+                      {:r 0.6, :omega -0.45, :color "#4338ca"}]}
+
+            #_ {:mode 0
+             :rotors [{:r 0.57, :omega 0.39, :color "#f43f5e"}
+                        {:r 0.5, :omega -0.27, :color "#65a30d"}
+                        {:r 0.125, :omega 0.27, :color "#4338ca"}]}
+
+            {:mode 0,
+             :rotors [{:r 0.80, :omega 0.55, :color "#f43f5e"}
+                      {:r 0.5, :omega -0.27, :color "#65a30d"}
+                      {:r 0.75, :omega 0.27, :color "#4338ca"}]})
+    (clerk/recompute!))
+
+  ;; clean
+  (do (swap! model assoc :clean? true)
+      (clerk/recompute!)
+      (swap! model assoc :clean? false)
+      (clerk/recompute!)))
