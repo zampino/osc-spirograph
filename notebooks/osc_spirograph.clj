@@ -1,7 +1,7 @@
 ;; # ꩜ OSC Spirograph
 ;; This short notebook shows how to combine an [OSC](https://en.wikipedia.org/wiki/Open_Sound_Control)
 ;; controller with vector graphic visualizations in Clerk. OSC is generally used for networking live multimedia
-;; devices and sound syntesizers, but as [noted a while ago by Joe Armstrong](https://joearms.github.io/published/2016-01-28-A-Badass-Way-To-Connect-Programs-Together.html) its
+;; devices and sound synthesizers, but as [noted a while ago by Joe Armstrong](https://joearms.github.io/published/2016-01-28-A-Badass-Way-To-Connect-Programs-Together.html) its
 ;; simplicity makes it an interesting choice for exchanging data between machines.
 
 (ns osc-spirograph
