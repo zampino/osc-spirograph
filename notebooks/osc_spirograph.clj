@@ -43,12 +43,9 @@
                   :transform-fn (fn [{::clerk/keys [var-from-def]}] {:value @@var-from-def})
                   :render-fn '(fn [{:keys [value]}]
                                 (defonce model (atom nil))
-                                (let [current (swap! model
-                                                     (partial merge-with (fn [old new] (if (vector? old) (mapv merge old new) new)))
-                                                     value)]
-                                  (-> current
-                                      (update :rotors (partial mapv #(dissoc % :group)))
-                                      (dissoc :drawing :curve))))}}
+                                (-> (swap! model (partial merge-with (fn [old new] (if (vector? old) (mapv merge old new) new))) value)
+                                    (update :rotors (partial mapv #(dissoc % :group)))
+                                    (dissoc :drawing :curve)))}}
 
 ;; This is the model representing the coefficients of our spirograph. Three "rotors" with ampliture `r` and frequency `omega`.
 (def model
@@ -197,6 +194,11 @@
   ;; nice models
   (do
     (reset! model
+
+            #_ {:mode 0,
+                :rotors [{:r 0.77, :omega 0.34, :color "#f43f5e"}
+                         {:r 0.61, :omega -0.21, :color "#65a30d"}
+                         {:r 0.24, :omega 0.32, :color "#4338ca"}]}
             #_ {:mode 0
                 :rotors [{:r 0.41, :omega 0.46, :color "#f43f5e"}
                       {:r 0.71, :omega -0.44, :color "#65a30d"}
@@ -206,6 +208,11 @@
              :rotors [{:r 0.57, :omega 0.39, :color "#f43f5e"}
                         {:r 0.5, :omega -0.27, :color "#65a30d"}
                         {:r 0.125, :omega 0.27, :color "#4338ca"}]}
+
+            #_ {:mode 0,
+                :rotors [{:r 0.72, :omega -0.25, :color "#f43f5e"}
+                         {:r 0.59, :omega 0.45, :color "#65a30d"}
+                         {:r 0.52, :omega 0.3, :color "#4338ca"}]}
 
             {:mode 0,
              :rotors [{:r 0.80, :omega 0.55, :color "#f43f5e"}
