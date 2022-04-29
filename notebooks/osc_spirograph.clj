@@ -169,13 +169,18 @@
   (let [{:keys [path value]} (osc->map osc-message)]
     (update-model! #(assoc-in % path value))))
 
-;; Clerk won't cache forms returning nil values, hence the do here to ensure we tap only once
+;; Clerk won't cache forms returning nil values, hence the do here to ensure we register our
+;; handler just once while evaluating the notebook.
 (do
   (add-tap osc-message-handler)
   true)
 
-;; and that's it. If you're looking at a static version of this notebook, I guess you'll want to clone this repo, launch
+;; And that's it I guess. Now, if you're looking at a static version of this notebook, you might want to clone [this repo](https://github.com/zampino/osc-spirograph), launch
 ;; Clerk with `(nextjournal.clerk/serve! {})` and see it in action with `(nextjournal.clerk/show! "notebooks/osc_spirograph.clj")`.
+;;
+;; This project has been inspired by - let alone my curiosity for a niche protocol - Jack Schaedler's interactive article ["SEEING CIRCLES, SINES, AND SIGNALS"](https://jackschaedler.github.io/circles-sines-signals/index.html)
+;; to which I refer the reader to further explore the implications of Fourier analysis with digital signal processing.
+;; My article should definitely expand to also contain some sound, probably using overtone. Suggestions anyone? [@lo_zampino](https://twitter.com/lo_zampino)
 
 ^{::clerk/visibility :hide ::clerk/viewer :hide-result}
 (comment
