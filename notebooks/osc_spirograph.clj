@@ -91,7 +91,7 @@
                       (reagent/with-let
                         [Vector (.-Vector Two) Line (.-Line Two) Group (.-Group Two)
                          world-matrix (.. Two -Utils -getComputedMatrix)
-                         R 200 MAXV 1000 T (* js/Math.PI 0.05) time-scale 0.09
+                         R 200 MAXV 1000 time-scale 0.09
                          phasor-group (fn [drawing parent {:keys [amplitude color]}]
                                        (let [G (doto (Group.)
                                                  (j/assoc! :position
@@ -118,7 +118,7 @@
                          update-phasor! (fn [{:keys [amplitude frequency group]} dt]
                                          (when group
                                            (j/assoc-in! group [:children 0 :vertices 1 :x] (* amplitude R))
-                                           (j/update! group :rotation + (* T frequency dt))))
+                                           (j/update! group :rotation + (* 2 js/Math.PI frequency dt))))
                          build-curve (fn [{:as m :keys [drawing]}]
                                        (assoc m :curve
                                                 (doto (.makeCurve drawing)
