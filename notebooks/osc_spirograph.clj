@@ -1,6 +1,6 @@
 ;; # ꩜ An OSC _fourieristic_ Spirograph
-;; _This short notebook shows how to use an [OSC](https://en.wikipedia.org/wiki/Open_Sound_Control)
-;; driven controller to interact with vector graphic animations in Clerk. OSC is generally used for networking live multimedia
+;; _This short page shows how to use an [OSC](https://en.wikipedia.org/wiki/Open_Sound_Control)
+;; driven controller which runs on your phone to interact with vector graphic animations in a Clerk notebook. OSC is generally used for networking live multimedia
 ;; devices and sound synthesizers, but as [noted a while ago by Joe Armstrong](https://joearms.github.io/published/2016-01-28-A-Badass-Way-To-Connect-Programs-Together.html) its
 ;; simplicity makes it an interesting choice for exchanging data across machines in a broader range of applications._
 ^{:nextjournal.clerk/visibility :hide-ns}
@@ -34,7 +34,7 @@
 
 ;; our drawing is a function of time with values in the complex plane
 ;;
-;; $$\zeta(t) = \sum_{k=1}^3 \mathsf{amplitude}_i\,\large{e}^{2\pi\,\mathsf{frequency}_k \,i\, t}$$
+;; $$\zeta(t) = \sum_{k=1}^3 \mathsf{amplitude}_k\,\large{e}^{2\pi\,\mathsf{frequency}_k \,i\, t}$$
 ;;
 
 ^{::clerk/visibility :fold ::clerk/viewer :hide-result}
