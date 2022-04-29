@@ -1,4 +1,4 @@
-;; # ꩜ OSC Spirograph
+;; # ꩜ An OSC _fourieristic_ Spirograph
 ;; This short notebook shows how to combine an [OSC](https://en.wikipedia.org/wiki/Open_Sound_Control)
 ;; controller with vector graphic visualizations in Clerk. OSC is generally used for networking live multimedia
 ;; devices and sound synthesizers, but as [noted a while ago by Joe Armstrong](https://joearms.github.io/published/2016-01-28-A-Badass-Way-To-Connect-Programs-Together.html) its
@@ -44,15 +44,15 @@
                   :render-fn '(fn [{:keys [value]}]
                                 (defonce model (atom nil))
                                 (-> (swap! model (partial merge-with (fn [old new] (if (vector? old) (mapv merge old new) new))) value)
-                                    (update :rotors (partial mapv #(dissoc % :group)))
+                                    (update :phasors (partial mapv #(dissoc % :group)))
                                     (dissoc :drawing :curve)))}}
 
-;; This is the model representing the coefficients of our spirograph. Three "rotors" with ampliture `r` and frequency `omega`.
+;; This is the model representing the coefficients of our spirograph. Three [phasors](https://en.wikipedia.org/wiki/Phasor) each with an ampliture and an angular frequency.
 (def model
   (atom {:mode 0
-         :rotors [{:r 0.9 :omega 0.2 :color "#f43f5e"}
-                  {:r 0.5 :omega -0.35 :color "#65a30d"}
-                  {:r 0.125 :omega 0.4 :color "#4338ca"}]}))
+         :phasors [{:amplitude 0.9 :frequency 0.2 :color "#f43f5e"}
+                   {:amplitude 0.5 :frequency -0.35 :color "#65a30d"}
+                   {:amplitude 0.125 :frequency 0.4 :color "#4338ca"}]}))
 
 ;; the linear faders in the above UX will control the amplitude, while the radial controllers
 ;; will control the frequencies
@@ -65,7 +65,7 @@
 ;;
 (defn osc->map [^OSCMessage m]
   (let [[v & path] (map #(cond-> % (string? %) keyword) (.getArguments m))]
-    {:value (if (= :rotors (first path)) (float (/ v 100)) v)
+    {:value (if (= :phasors (first path)) (float (/ v 100)) v)
      :path path}))
 
 ;; a helper for updating our model and recomputing the notebook (without redoing all of Clerk static analysis).
@@ -78,7 +78,7 @@
   (let [{:keys [path value]} (osc->map osc-message)]
     (update-model! #(assoc-in % path value))))
 
-;; This needs to be evaluated just once (Clerk caching should take care of this, why do I need the defonce?).
+;; Clerk won't cache forms returning nil values, hence the do here.
 (defonce tapped
   (add-tap osc-message-handler))
 
@@ -91,34 +91,34 @@
                       (reagent/with-let
                         [Vector (.-Vector Two) Line (.-Line Two) Group (.-Group Two)
                          world-matrix (.. Two -Utils -getComputedMatrix)
-                         R 200 MAXV 1000 T (* js/Math.PI 0.05)
-                         rotor-group (fn [drawing parent {:keys [r color]}]
+                         R 200 MAXV 1000 T (* js/Math.PI 0.05) time-scale 0.09
+                         phasor-group (fn [drawing parent {:keys [amplitude color]}]
                                        (let [G (doto (Group.)
                                                  (j/assoc! :position
                                                            (j/get-in parent [:children 0 :vertices 1]
                                                                      (Vector. (/ (.-width drawing) 2)
                                                                               (/ (.-height drawing) 2)))))]
                                          (.add parent G)
-                                         (.add G (doto (Line. 0.0 0.0 (* r R) 0.0)
+                                         (.add G (doto (Line. 0.0 0.0 (* amplitude R) 0.0)
                                                    (j/assoc! :linewidth 7)
                                                    (j/assoc! :stroke color)
                                                    (j/assoc! :cap "round")
                                                    ))
                                          G))
-                         build-rotors (fn [{:as m :keys [drawing]}]
-                                        (update m :rotors
-                                                #(:rotors (reduce
+                         build-phasors (fn [{:as m :keys [drawing]}]
+                                        (update m :phasors
+                                                #(:phasors (reduce
                                                             (fn [{:as acc :keys [parent-group]} params]
-                                                              (let [g (rotor-group drawing parent-group params)]
+                                                              (let [g (phasor-group drawing parent-group params)]
                                                                 (-> acc
-                                                                    (update :rotors conj (assoc params :group g))
+                                                                    (update :phasors conj (assoc params :group g))
                                                                     (assoc :parent-group g))))
-                                                            {:parent-group (.-scene drawing) :rotors []}
+                                                            {:parent-group (.-scene drawing) :phasors []}
                                                             %))))
-                         update-rotor! (fn [{:keys [r omega group]} tdelta]
+                         update-phasor! (fn [{:keys [amplitude frequency group]} dt]
                                          (when group
-                                           (j/assoc-in! group [:children 0 :vertices 1 :x] (* r R))
-                                           (j/update! group :rotation + (* T omega tdelta))))
+                                           (j/assoc-in! group [:children 0 :vertices 1 :x] (* amplitude R))
+                                           (j/update! group :rotation + (* T frequency dt))))
                          build-curve (fn [{:as m :keys [drawing]}]
                                        (assoc m :curve
                                                 (doto (.makeCurve drawing)
@@ -127,14 +127,14 @@
                                                   (j/assoc! :linewidth 5)
                                                   (j/assoc! :opacity 0.8)
                                                   .noFill)))
-                         pen-position (fn [{:keys [rotors]}]
-                                        (let [{:keys [r group]} (last rotors)]
+                         pen-position (fn [{:keys [phasors]}]
+                                        (let [{:keys [amplitude group]} (last phasors)]
                                           (.copy (Vector.)
-                                                 (-> group world-matrix (.multiply (* r R) 0.0 1.0)))))
-                         ->color (fn [{:keys [rotors]}]
-                                   (let [[r g b] (map (comp js/Math.floor (partial * 200) :r) rotors)]
+                                                 (-> group world-matrix (.multiply (* amplitude R) 0.0 1.0)))))
+                         ->color (fn [{:keys [phasors]}]
+                                   (let [[r g b] (map (comp js/Math.floor (partial * 200) :amplitude) phasors)]
                                      (str "rgb(" r "," g "," b ")")))
-                         draw-curve! (fn [{:as model :keys [drawing mode curve]} tdelta]
+                         draw-curve! (fn [{:as model :keys [drawing mode curve]} dt]
                                        (when curve
                                          (let [vxs (.-vertices curve) size (.-length vxs)]
                                            (case mode
@@ -143,30 +143,23 @@
                                              1 ;; fourier
                                              (doto vxs
                                                (.push (j/assoc! (pen-position model) :x (/ (.-width drawing) 2)))
-                                               (.forEach (fn [p] (j/update! p :x - tdelta))))
+                                               (.forEach (fn [p] (j/update! p :x - dt))))
                                              nil)
                                            (when (< MAXV size) (.splice vxs 0 (- size MAXV)))
                                            (j/assoc! curve :stroke (->color model)))))
-                         apply-model (fn [{:as model :keys [clean? curve drawing rotors]} t tdelta]
-                                       (doseq [rot rotors] (update-rotor! rot tdelta))
-                                       ;; draw curve at next tick
-                                       (js/requestAnimationFrame #(draw-curve! model tdelta))
+                         apply-model (fn [{:as model :keys [clean? curve drawing phasors]} dt]
+                                       (doseq [rot phasors] (update-phasor! rot dt))
+                                       (js/requestAnimationFrame #(draw-curve! model dt)) ;; draw curve at next tick
                                        (when clean? (.remove drawing curve))
                                        (cond-> model clean? build-curve))
-                         update! (fn [frames tdelta] (swap! model apply-model (* 0.09 frames) (* 0.09 tdelta)))
+                         update! (fn [_frames dt] (swap! model apply-model (* time-scale dt)))
                          refn (fn [el]
                                 (when (and el (not (:drawing @model)))
-                                  (js/console.log :boot el)
-                                  (let [drawing (Two. (j/obj :type (.. Two -Types -svg)
-                                                             :autostart true
-                                                             :fitted true))]
+                                  (let [drawing (Two. (j/obj :type (.. Two -Types -svg) :autostart true :fitted true))]
                                     (.appendTo drawing el)
                                     (.bind drawing "update" update!)
-                                    (swap! model #(-> %
-                                                      (assoc :drawing drawing)
-                                                      build-rotors build-curve)))))]
-                        [:div {:ref refn
-                               :style {:width "100%" :height "800px"}}]))]))})
+                                    (swap! model #(-> % (assoc :drawing drawing) build-phasors build-curve)))))]
+                        [:div {:ref refn :style {:width "100%" :height "800px"}}]))]))})
 
 
 ;; and finally our spinning wheels in place for a fourieristic drawing.
@@ -188,36 +181,36 @@
   (.isListening osc)
   (.stopListening osc)
 
-  (update-model (fn [m] (assoc-in m [:rotors 0 :r] 2.0)))
-  (update-model (fn [m] (assoc-in m [:rotors 1 :omega] 0.9)))
+  (update-model (fn [m] (assoc-in m [:phasors 0 :amplitude] 2.0)))
+  (update-model (fn [m] (assoc-in m [:phasors 1 :frequency] 0.9)))
 
-  ;; nice models
+  ;; save nice models
   (do
     (reset! model
 
             #_ {:mode 0,
-                :rotors [{:r 0.77, :omega 0.34, :color "#f43f5e"}
-                         {:r 0.61, :omega -0.21, :color "#65a30d"}
-                         {:r 0.24, :omega 0.32, :color "#4338ca"}]}
+                :phasors [{:amplitude 0.77, :frequency 0.34, :color "#f43f5e"}
+                         {:amplitude 0.61, :frequency -0.21, :color "#65a30d"}
+                         {:amplitude 0.24, :frequency 0.32, :color "#4338ca"}]}
             #_ {:mode 0
-                :rotors [{:r 0.41, :omega 0.46, :color "#f43f5e"}
-                      {:r 0.71, :omega -0.44, :color "#65a30d"}
-                      {:r 0.6, :omega -0.45, :color "#4338ca"}]}
+                :phasors [{:amplitude 0.41, :frequency 0.46, :color "#f43f5e"}
+                      {:amplitude 0.71, :frequency -0.44, :color "#65a30d"}
+                      {:amplitude 0.6, :frequency -0.45, :color "#4338ca"}]}
 
             #_ {:mode 0
-             :rotors [{:r 0.57, :omega 0.39, :color "#f43f5e"}
-                        {:r 0.5, :omega -0.27, :color "#65a30d"}
-                        {:r 0.125, :omega 0.27, :color "#4338ca"}]}
+             :phasors [{:amplitude 0.57, :frequency 0.39, :color "#f43f5e"}
+                        {:amplitude 0.5, :frequency -0.27, :color "#65a30d"}
+                        {:amplitude 0.125, :frequency 0.27, :color "#4338ca"}]}
 
             #_ {:mode 0,
-                :rotors [{:r 0.72, :omega -0.25, :color "#f43f5e"}
-                         {:r 0.59, :omega 0.45, :color "#65a30d"}
-                         {:r 0.52, :omega 0.3, :color "#4338ca"}]}
+                :phasors [{:amplitude 0.72, :frequency -0.25, :color "#f43f5e"}
+                         {:amplitude 0.59, :frequency 0.45, :color "#65a30d"}
+                         {:amplitude 0.52, :frequency 0.3, :color "#4338ca"}]}
 
             {:mode 0,
-             :rotors [{:r 0.80, :omega 0.55, :color "#f43f5e"}
-                      {:r 0.5, :omega -0.27, :color "#65a30d"}
-                      {:r 0.75, :omega 0.27, :color "#4338ca"}]})
+             :phasors [{:amplitude 0.80, :frequency 0.55, :color "#f43f5e"}
+                       {:amplitude 0.5, :frequency -0.27, :color "#65a30d"}
+                       {:amplitude 0.75, :frequency 0.27, :color "#4338ca"}]})
     (clerk/recompute!))
 
   ;; clean
