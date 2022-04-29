@@ -13,7 +13,7 @@
            (java.net InetSocketAddress)
            (javax.imageio ImageIO)))
 
-^{::clerk/visibility :hide :nextjournal.clerk/viewer :hide-result}
+^{::clerk/visibility :fold :nextjournal.clerk/viewer :hide-result}
 (def client-model-sync
   ;; This viewer is used to sync models between clojure values and those on the client side
   {:fetch-fn (fn [_ x] x)
@@ -29,9 +29,9 @@
 ^{::clerk/viewer client-model-sync}
 (def model
   (atom {:mode 0
-         :phasors [{:amplitude 0.9 :frequency 0.2 :color "#f43f5e"}
-                   {:amplitude 0.5 :frequency -0.35 :color "#65a30d"}
-                   {:amplitude 0.125 :frequency 0.4 :color "#4338ca"}]}))
+         :phasors [{:amplitude 0.41, :frequency 0.46, :color "#f43f5e"}
+                   {:amplitude 0.46, :frequency -0.44, :color "#65a30d"}
+                   {:amplitude 1.0, :frequency -0.45, :color "#4338ca"}]}))
 
 ;; our drawing then is a function of time with values in the complex plane
 ;;
@@ -199,9 +199,14 @@
                          {:amplitude 0.61, :frequency -0.21, :color "#65a30d"}
                          {:amplitude 0.24, :frequency 0.32, :color "#4338ca"}]}
             #_ {:mode 0
-                :phasors [{:amplitude 0.41, :frequency 0.46, :color "#f43f5e"}
-                      {:amplitude 0.71, :frequency -0.44, :color "#65a30d"}
-                      {:amplitude 0.6, :frequency -0.45, :color "#4338ca"}]}
+             :phasors [{:amplitude 0.41, :frequency 0.46, :color "#f43f5e"}
+                       {:amplitude 0.71, :frequency -0.44, :color "#65a30d"}
+                       {:amplitude 0.6, :frequency -0.45, :color "#4338ca"}]}
+
+            {:mode 0,
+             :phasors [{:amplitude 0.41, :frequency 0.46, :color "#f43f5e"}
+                       {:amplitude 0.46, :frequency -0.44, :color "#65a30d"}
+                       {:amplitude 1.0, :frequency -0.45, :color "#4338ca"}]}
 
             #_ {:mode 0
              :phasors [{:amplitude 0.57, :frequency 0.39, :color "#f43f5e"}
@@ -212,7 +217,7 @@
                 :phasors [{:amplitude 0.72, :frequency -0.25, :color "#f43f5e"}
                          {:amplitude 0.59, :frequency 0.45, :color "#65a30d"}
                          {:amplitude 0.52, :frequency 0.3, :color "#4338ca"}]}
-
+            #_
             {:mode 0,
              :phasors [{:amplitude 0.80, :frequency 0.55, :color "#f43f5e"}
                        {:amplitude 0.5, :frequency -0.27, :color "#65a30d"}
