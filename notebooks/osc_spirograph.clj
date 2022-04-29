@@ -25,7 +25,7 @@
                      (dissoc :drawing :curve)))})
 
 ;; This is the model representing the constituents of our spirograph.
-;; Three [phasors](https://en.wikipedia.org/wiki/Phasor) each with an ampliture and an angular frequency
+;; Three [phasors](https://en.wikipedia.org/wiki/Phasor) each with an amplitude and an angular frequency
 ^{::clerk/viewer client-model-sync}
 (def model
   (atom {:phasors [{:amplitude 0.41 :frequency 0.46}
