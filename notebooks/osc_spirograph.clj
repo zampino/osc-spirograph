@@ -1,8 +1,8 @@
 ;; # ꩜ An OSC _fourieristic_ Spirograph
-;; _This short page shows how to use an [OSC](https://en.wikipedia.org/wiki/Open_Sound_Control)
-;; driven controller which runs on your phone to interact with vector graphic animations in a Clerk notebook. OSC is generally used for networking live multimedia
-;; devices and sound synthesizers, but as [noted a while ago by Joe Armstrong](https://joearms.github.io/published/2016-01-28-A-Badass-Way-To-Connect-Programs-Together.html) its
-;; simplicity makes it an interesting choice for exchanging data across machines in a broader range of applications._
+;; _This short text shows how to use an [OSC](https://en.wikipedia.org/wiki/Open_Sound_Control)
+;; driven controller running on your phone to interact with vector graphic animations in a Clerk notebook. OSC is generally employed in live multimedia
+;; devices and sound synthesizers, but as [remarked a while ago by Joe Armstrong](https://joearms.github.io/published/2016-01-28-A-Badass-Way-To-Connect-Programs-Together.html)
+;; its properties make it an interesting choice for exchanging data across machines in a broader range of applications._
 ^{:nextjournal.clerk/visibility :hide-ns}
 (ns osc-spirograph
   (:require [nextjournal.clerk :as clerk]
@@ -25,14 +25,14 @@
                      (dissoc :drawing :curve)))})
 
 ;; This is the model representing the constituents of our spirograph.
-;; Three [phasors](https://en.wikipedia.org/wiki/Phasor) each with an amplitude and an angular frequency
+;; Three [phasors](https://en.wikipedia.org/wiki/Phasor), each one carrying an amplitude and an angular frequency.
 ^{::clerk/viewer client-model-sync}
 (def model
   (atom {:phasors [{:amplitude 0.41 :frequency 0.46}
                    {:amplitude 0.46 :frequency -0.44}
                    {:amplitude 1.00 :frequency -0.45}]}))
 
-;; our drawing is a function of time with values in the complex plane
+;; Our drawing is a function of time with values in the complex plane.
 ;;
 ;; $$\zeta(t) = \sum_{k=1}^3 \mathsf{amplitude}_k\,\large{e}^{2\pi\,\mathsf{frequency}_k \,i\, t}$$
 ;;
@@ -122,19 +122,18 @@
 (Object.)
 
 ;; We'll be interacting with the spirograph by means of [TouchOSC](https://hexler.net/touchosc) an application for building OSC (or MIDI) driven interfaces runnable on smartphones and the like.
-;; Our controller is looking like this
-
+;; Our controller is looking like this:
 ^{::clerk/visibility :hide}
 (ImageIO/read (io/resource "spirograph.png"))
-
-;; the linear faders in the above UX will control the phasors amplitudes while radial ones change their frequencies.
+;; the linear faders on the left will control the phasors amplitudes while the radial ones change their frequencies. This
+;; specific layout is saved in [this file](https://github.com/zampino/osc-spirograph/blob/main/spirograph.tosc).
 ;;
-;; OSC messages are composed of an _address_ and sequential _arguments_. We configured our interface to emit message
+;; OSC binary messages are composed of an _address_ and sequential _arguments_. We configured our interface to emit message
 ;; arguments of the form `[value & path]` where the first entry is an integer in the range `0` to `100` while the tail is a valid path in
-;; the model. In this application we're ignoring the message address.
+;; the model. We're actually ignoring the message address.
 ;;
 ;; In order to receive OSC messages, we instantiate an OSC Server. We're overlaying an extra broadcast layer on top of the simple echo server
-;; provided by the [JavaOSC library](https://github.com/hoijui/JavaOSC) this will allow to debug incoming messages in the terminal.
+;; provided by the [JavaOSC library](https://github.com/hoijui/JavaOSC). This will, in addition, allow to debug incoming messages in the terminal.
 ;;
 ;; Received events are tapped into the JVM for them to be handled with clojure functions, this piece shows Java interop at its best!
 (when-not (System/getenv "NOSC")
@@ -152,25 +151,25 @@
                                    (tap> (.getMessage event))))))))
       .start)))
 
-;; the rest is routine: message conversion,
+;; Next, we need a function to convert OSC messages into normalized clojure data
 (defn osc->map [^OSCMessage m]
   (let [[v & path] (map #(cond-> % (string? %) keyword) (.getArguments m))]
     {:value (if (= :phasors (first path)) (float (/ v 100)) v)
      :path path}))
 
-;; a helper for updating our model and recomputing the notebook
+;; and a helper for updating our model and recomputing the notebook
 (defn update-model! [f]
   (swap! model f)
   (binding [*ns* (find-ns 'osc-spirograph)]
     (clerk/recompute!)))
 
-;; and a message handler added to tap callbacks
+;; finally, a message handler to be added to tap callbacks
 (defn osc-message-handler [osc-message]
   (let [{:keys [path value]} (osc->map osc-message)]
     (update-model! #(assoc-in % path value))))
 
 ;; Clerk won't cache forms returning nil values, hence the do here to ensure we register our
-;; handler just once while evaluating the notebook.
+;; handler just once when the notebook is evaluated
 (do
   (add-tap osc-message-handler)
   true)
@@ -178,7 +177,7 @@
 ;; And that's it I guess. Now, if you're looking at a static version of this notebook, you might want to clone [this repo](https://github.com/zampino/osc-spirograph), launch
 ;; Clerk with `(nextjournal.clerk/serve! {})` and see it in action with `(nextjournal.clerk/show! "notebooks/osc_spirograph.clj")`.
 ;;
-;; This project has been inspired by - let alone my curiosity for a niche protocol - Jack Schaedler's interactive article ["SEEING CIRCLES, SINES, AND SIGNALS"](https://jackschaedler.github.io/circles-sines-signals/index.html)
+;; This project has been inspired by - let alone my curiosity for a nic(h)e protocol - Jack Schaedler's interactive article ["SEEING CIRCLES, SINES, AND SIGNALS"](https://jackschaedler.github.io/circles-sines-signals/index.html)
 ;; to which I refer the reader to further explore the implications of Fourier analysis with digital signal processing.
 ;; My article should definitely expand to also contain some sound, probably using overtone. Suggestions anyone? [@lo_zampino](https://twitter.com/lo_zampino)
 
@@ -200,16 +199,16 @@
   @model
   (do
     (reset! model
-            #_ {:mode 0,
-                :phasors [{:amplitude 0.77, :frequency 0.34}
-                         {:amplitude 0.61, :frequency -0.21}
-                         {:amplitude 0.24, :frequency 0.32}]}
+            {:mode 0,
+                :phasors [{:amplitude 0.4, :frequency 0.2}
+                         {:amplitude 1.0, :frequency -0.2}
+                         {:amplitude 0.4, :frequency 0.6}]}
             #_ {:mode 0
              :phasors [{:amplitude 0.41, :frequency 0.46}
                        {:amplitude 0.71, :frequency -0.44}
                        {:amplitude 0.6, :frequency -0.45}]}
 
-            {:mode 0,
+            #_ {:mode 0,
              :phasors [{:amplitude 0.41, :frequency 0.46}
                        {:amplitude 0.46, :frequency -0.44}
                        {:amplitude 1.0, :frequency -0.45}]}
