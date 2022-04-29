@@ -28,12 +28,11 @@
 ;; Three [phasors](https://en.wikipedia.org/wiki/Phasor) each with an ampliture and an angular frequency
 ^{::clerk/viewer client-model-sync}
 (def model
-  (atom {:mode 0
-         :phasors [{:amplitude 0.41, :frequency 0.46, :color "#f43f5e"}
-                   {:amplitude 0.46, :frequency -0.44, :color "#65a30d"}
-                   {:amplitude 1.0, :frequency -0.45, :color "#4338ca"}]}))
+  (atom {:phasors [{:amplitude 0.41 :frequency 0.46}
+                   {:amplitude 0.46 :frequency -0.44}
+                   {:amplitude 1.00 :frequency -0.45}]}))
 
-;; our drawing then is a function of time with values in the complex plane
+;; our drawing is a function of time with values in the complex plane
 ;;
 ;; $$\zeta(t) = \sum_{k=1}^3 \mathsf{amplitude}_i\,\large{e}^{2\pi\,\mathsf{frequency}_k \,i\, t}$$
 ;;
@@ -48,6 +47,7 @@
                         [Vector (.-Vector Two) Line (.-Line Two) Group (.-Group Two)
                          world-matrix (.. Two -Utils -getComputedMatrix)
                          R 200 MAXV 1000 time-scale 0.09 frequency-factor (* 2 js/Math.PI 0.025)
+                         arm-color ["#f43f5e" "#65a30d" "#4338ca"] ;; [ r , g , b ]
                          phasor-group (fn [drawing parent {:keys [amplitude color]}]
                                         (let [G (doto (Group.)
                                                   (j/assoc! :position
@@ -58,19 +58,20 @@
                                           (.add G (doto (Line. 0.0 0.0 (* amplitude R) 0.0)
                                                     (j/assoc! :linewidth 7)
                                                     (j/assoc! :stroke color)
-                                                    (j/assoc! :cap "round")
-                                                    ))
+                                                    (j/assoc! :cap "round")))
                                           G))
                          build-phasors (fn [{:as m :keys [drawing]}]
-                                         (update m :phasors
-                                                 #(:phasors (reduce
-                                                              (fn [{:as acc :keys [parent-group]} params]
-                                                                (let [g (phasor-group drawing parent-group params)]
-                                                                  (-> acc
-                                                                      (update :phasors conj (assoc params :group g))
-                                                                      (assoc :parent-group g))))
-                                                              {:parent-group (.-scene drawing) :phasors []}
-                                                              %))))
+                                         (update m :phasors (fn [phasors]
+                                                              (->> phasors
+                                                                   (transduce (map-indexed (fn [i ph] (assoc ph :color (arm-color i))))
+                                                                              (fn
+                                                                                ([] {:phasors [] :parent-group (.-scene drawing)})
+                                                                                ([ret] (:phasors ret))
+                                                                                ([{:as acc :keys [parent-group]} params]
+                                                                                 (let [g (phasor-group drawing parent-group params)]
+                                                                                   (-> acc
+                                                                                       (update :phasors conj (-> params (assoc :group g) (dissoc :color)))
+                                                                                       (assoc :parent-group g))))))))))
                          update-phasor! (fn [{:keys [amplitude frequency group]} dt]
                                           (when group
                                             (j/assoc-in! group [:children 0 :vertices 1 :x] (* amplitude R))
@@ -90,22 +91,22 @@
                          ->color (fn [{:keys [phasors]}]
                                    (let [[r g b] (map (comp js/Math.floor (partial * 200) :amplitude) phasors)]
                                      (str "rgb(" r "," g "," b ")")))
-                         draw-curve! (fn [{:as model :keys [drawing mode curve]} dt]
-                                       (when curve
-                                         (let [vxs (.-vertices curve) size (.-length vxs)]
-                                           (case mode
-                                             0 ;; spirograph
-                                             (.push vxs (pen-position model))
-                                             1 ;; fourier
-                                             (doto vxs
-                                               (.push (j/assoc! (pen-position model) :x (/ (.-width drawing) 2)))
-                                               (.forEach (fn [p] (j/update! p :x - dt))))
-                                             nil)
-                                           (when (< MAXV size) (.splice vxs 0 (- size MAXV)))
-                                           (j/assoc! curve :stroke (->color model)))))
+                         update-curve! (fn [{:as model :keys [drawing mode curve]} dt]
+                                         (when curve
+                                           (let [vxs (.-vertices curve) size (.-length vxs)]
+                                             (case (or mode 0)
+                                               0            ;; spirograph
+                                               (.push vxs (pen-position model))
+                                               1            ;; fourier
+                                               (doto vxs
+                                                 (.push (j/assoc! (pen-position model) :x (/ (.-width drawing) 2)))
+                                                 (.forEach (fn [p] (j/update! p :x - dt))))
+                                               nil)
+                                             (when (< MAXV size) (.splice vxs 0 (- size MAXV)))
+                                             (j/assoc! curve :stroke (->color model)))))
                          apply-model (fn [{:as model :keys [clean? curve drawing phasors]} dt]
                                        (doseq [rot phasors] (update-phasor! rot dt))
-                                       (js/requestAnimationFrame #(draw-curve! model dt)) ;; draw curve at next tick
+                                       (js/requestAnimationFrame #(update-curve! model dt)) ;; draw curve at next tick
                                        (when clean? (.remove drawing curve))
                                        (cond-> model clean? build-curve))
                          update! (fn [_frames dt] (swap! model apply-model (* time-scale dt)))
@@ -195,33 +196,33 @@
   (do
     (reset! model
             #_ {:mode 0,
-                :phasors [{:amplitude 0.77, :frequency 0.34, :color "#f43f5e"}
-                         {:amplitude 0.61, :frequency -0.21, :color "#65a30d"}
-                         {:amplitude 0.24, :frequency 0.32, :color "#4338ca"}]}
+                :phasors [{:amplitude 0.77, :frequency 0.34}
+                         {:amplitude 0.61, :frequency -0.21}
+                         {:amplitude 0.24, :frequency 0.32}]}
             #_ {:mode 0
-             :phasors [{:amplitude 0.41, :frequency 0.46, :color "#f43f5e"}
-                       {:amplitude 0.71, :frequency -0.44, :color "#65a30d"}
-                       {:amplitude 0.6, :frequency -0.45, :color "#4338ca"}]}
+             :phasors [{:amplitude 0.41, :frequency 0.46}
+                       {:amplitude 0.71, :frequency -0.44}
+                       {:amplitude 0.6, :frequency -0.45}]}
 
             {:mode 0,
-             :phasors [{:amplitude 0.41, :frequency 0.46, :color "#f43f5e"}
-                       {:amplitude 0.46, :frequency -0.44, :color "#65a30d"}
-                       {:amplitude 1.0, :frequency -0.45, :color "#4338ca"}]}
+             :phasors [{:amplitude 0.41, :frequency 0.46}
+                       {:amplitude 0.46, :frequency -0.44}
+                       {:amplitude 1.0, :frequency -0.45}]}
 
             #_ {:mode 0
-             :phasors [{:amplitude 0.57, :frequency 0.39, :color "#f43f5e"}
-                        {:amplitude 0.5, :frequency -0.27, :color "#65a30d"}
-                        {:amplitude 0.125, :frequency 0.27, :color "#4338ca"}]}
+             :phasors [{:amplitude 0.57, :frequency 0.39}
+                        {:amplitude 0.5, :frequency -0.27}
+                        {:amplitude 0.125, :frequency 0.27}]}
 
             #_ {:mode 0,
-                :phasors [{:amplitude 0.72, :frequency -0.25, :color "#f43f5e"}
-                         {:amplitude 0.59, :frequency 0.45, :color "#65a30d"}
-                         {:amplitude 0.52, :frequency 0.3, :color "#4338ca"}]}
+                :phasors [{:amplitude 0.72, :frequency -0.25}
+                         {:amplitude 0.59, :frequency 0.45}
+                         {:amplitude 0.52, :frequency 0.3}]}
             #_
             {:mode 0,
-             :phasors [{:amplitude 0.80, :frequency 0.55, :color "#f43f5e"}
-                       {:amplitude 0.5, :frequency -0.27, :color "#65a30d"}
-                       {:amplitude 0.75, :frequency 0.27, :color "#4338ca"}]})
+             :phasors [{:amplitude 0.80, :frequency 0.55}
+                       {:amplitude 0.5, :frequency -0.27}
+                       {:amplitude 0.75, :frequency 0.27}]})
     (clerk/recompute!))
 
   ;; clean
