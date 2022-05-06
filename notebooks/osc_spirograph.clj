@@ -132,10 +132,21 @@
 ;; arguments of the form `[value & path]` where the first entry is an integer in the range `0` to `100` while the tail is a valid path in
 ;; the model. We're actually ignoring the message address.
 ;;
-;; In order to receive OSC messages, we instantiate an OSC Server. We're overlaying an extra broadcast layer on top of the simple echo server
+;; That said, here's a function to convert OSC messages into clojure data, normalized to rational points inside the unit interval
+(defn osc->map [^OSCMessage m]
+  (let [[v & path] (map #(cond-> % (string? %) keyword) (.getArguments m))]
+    {:value (if (= :phasors (first path)) (float (/ v 100)) v)
+     :path path}))
+
+;; and a helper for updating our model and recomputing the notebook
+(defn update-model! [f]
+  (swap! model f)
+  (binding [*ns* (find-ns 'osc-spirograph)]
+    (clerk/recompute!)))
+
+;; Finally, in order to receive OSC messages, we instantiate an OSC Server. We're overlaying an extra broadcast layer on top of the simple echo server
 ;; provided by the [JavaOSC library](https://github.com/hoijui/JavaOSC). This will, in addition, allow to debug incoming messages in the terminal.
-;;
-;; Received events are tapped into the JVM for them to be handled with clojure functions, this piece shows Java interop at its best!
+(declare osc-message-handler)
 (when-not (System/getenv "NOSC")
   (defonce osc
     (doto (proxy [ConsoleEchoServer]
@@ -148,31 +159,9 @@
                                (reify
                                  OSCMessageListener
                                  (^void acceptMessage [_this ^OSCMessageEvent event]
-                                   (tap> (.getMessage event))))))))
+                                   (let [{:keys [path value]} (osc->map (.getMessage event))]
+                                     (update-model! #(assoc-in % path value)))))))))
       .start)))
-
-;; Next, we need a function to convert OSC messages into normalized clojure data
-(defn osc->map [^OSCMessage m]
-  (let [[v & path] (map #(cond-> % (string? %) keyword) (.getArguments m))]
-    {:value (if (= :phasors (first path)) (float (/ v 100)) v)
-     :path path}))
-
-;; and a helper for updating our model and recomputing the notebook
-(defn update-model! [f]
-  (swap! model f)
-  (binding [*ns* (find-ns 'osc-spirograph)]
-    (clerk/recompute!)))
-
-;; finally, a message handler to be added to tap callbacks
-(defn osc-message-handler [osc-message]
-  (let [{:keys [path value]} (osc->map osc-message)]
-    (update-model! #(assoc-in % path value))))
-
-;; Clerk won't cache forms returning nil values, hence the do here to ensure we register our
-;; handler just once when the notebook is evaluated
-(do
-  (add-tap osc-message-handler)
-  true)
 
 ;; And that's it I guess. Now, if you're looking at a static version of this notebook, you might want to clone [this repo](https://github.com/zampino/osc-spirograph), launch
 ;; Clerk with `(nextjournal.clerk/serve! {})` and see it in action with `(nextjournal.clerk/show! "notebooks/osc_spirograph.clj")`.
@@ -185,8 +174,6 @@
 (comment
   (clerk/serve! {:port 7779})
   (clerk/clear-cache!)
-
-  (remove-tap osc-message-handler)
 
   (.start osc)
   (.isListening osc)
