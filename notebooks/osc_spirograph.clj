@@ -176,11 +176,12 @@
              (some? mode)
              (cons (OSCMessage. "/mode" (List/of (int mode)))))))))
 
-(when-not (System/getenv "NOSC")
-  (.start osc-in)
-  (sync-osc @model)
-  ;; and remember to cache this :-)
-  true)
+(defonce started
+  (when-not (System/getenv "NOSC")
+    (.start osc-in)
+    (sync-osc @model)
+    ;; return `nil` avoid caching
+    nil))
 
 ;; And that's it I guess. Now, if you're looking at a static version of this notebook, you might want to clone [this repo](https://github.com/zampino/osc-spirograph), launch
 ;; Clerk with `(nextjournal.clerk/serve! {})` and see it in action with `(nextjournal.clerk/show! "notebooks/osc_spirograph.clj")`.
@@ -191,7 +192,7 @@
 
 ^{::clerk/visibility :hide ::clerk/viewer :hide-result}
 (comment
-  (clerk/serve! {:port 7779})
+  (clerk/serve! {:port 7777})
   (clerk/clear-cache!)
 
   @model
@@ -253,10 +254,13 @@
                :phasors [{:amplitude 0.80, :frequency 0.55}
                          {:amplitude 0.5, :frequency -0.27}
                          {:amplitude 0.75, :frequency 0.27}]})
+    (swap! model assoc :clean? true)
+    (clerk/recompute!)
+    (swap! model assoc :clean? false)
     (clerk/recompute!)
     (sync-osc @model))
 
-  ;; clean
+  ;; just clean
   (do (swap! model assoc :clean? true)
       (clerk/recompute!)
       (swap! model assoc :clean? false)
