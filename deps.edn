@@ -1,10 +1,10 @@
 {:paths ["notebooks" "resources"]
  :deps  {com.illposed.osc/javaosc-core {:mvn/version "0.8"}
-         io.github.nextjournal/clerk   {:git/sha "ac1959c31180c27df1597a1b419d2e8fbae75efa"}}
+         io.github.nextjournal/clerk   {:git/sha "0229e9df143e2b91b18eb27d4fbed106ba261245"}}
  :aliases
  {:nextjournal/clerk
   {:exec-fn nextjournal.clerk/build-static-app!
    :exec-args
-   {:paths ["notebooks/osc_spirograph.clj"]
+   {:paths   ["notebooks/osc_spirograph.clj"]
     :browse? false
     :bundle? false}}}}
