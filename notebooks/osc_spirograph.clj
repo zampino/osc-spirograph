@@ -220,6 +220,15 @@
   @model
   (do
     (reset! model
+            {:mode 0,
+             :phasors [{:amplitude 0.4, :frequency -0.22}
+                       {:amplitude 0.24, :frequency 0.22}
+                       {:amplitude 0.81, :frequency 0.65}]}
+            #_
+            {:mode 0,
+             :phasors [{:amplitude 1.0, :frequency 0.41}
+                       {:amplitude 0.64, :frequency -0.41}
+                       {:amplitude 0.17, :frequency -0.54}]}
             #_{:mode    0,
                :phasors [{:amplitude 0.4, :frequency 0.2}
                          {:amplitude 1.0, :frequency -0.2}
@@ -235,7 +244,7 @@
                          {:amplitude 0.83, :frequency 0.2}
                          {:amplitude 1.0, :frequency 0.35}]}
 
-
+            #_
             {:mode    0,
              :phasors [{:amplitude 0.41, :frequency 0.46}
                        {:amplitude 0.46, :frequency -0.44}
