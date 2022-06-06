@@ -6,7 +6,8 @@
 ^{:nextjournal.clerk/visibility :hide-ns}
 (ns osc-spirograph
   (:require [nextjournal.clerk :as clerk]
-            [clojure.java.io :as io])
+            [clojure.java.io :as io]
+            [nextjournal.clerk.viewer :as v])
   (:import (com.illposed.osc ConsoleEchoServer OSCMessageListener OSCMessageEvent OSCMessage OSCBundle)
            (com.illposed.osc.messageselector JavaRegexAddressMessageSelector)
            (com.illposed.osc.transport OSCPortOut)
@@ -18,13 +19,16 @@
 ^{::clerk/visibility :fold :nextjournal.clerk/viewer :hide-result}
 (def client-model-sync
   ;; This viewer is used to sync models between clojure values and those on the client side
-  {:fetch-fn (fn [_ x] x)
-   :transform-fn (fn [{::clerk/keys [var-from-def]}] {:value @@var-from-def})
-   :render-fn '(fn [{:keys [value]}]
-                 (defonce model (atom nil))
-                 (-> (swap! model (partial merge-with (fn [old new] (if (vector? old) (mapv merge old new) new))) value)
-                     (update :phasors (partial mapv #(dissoc % :group)))
-                     (dissoc :drawing :curve)))})
+  {:transform-fn (comp v/mark-presented (v/update-val (comp deref deref ::clerk/var-from-def)))
+   :render-fn    '(fn [val]
+                    (defonce model (atom nil))
+                    (v/html
+                     [v/inspect-paginated
+                      (-> (swap! model
+                                 (partial merge-with (fn [old new] (if (vector? old) (mapv merge old new) new)))
+                                 val)
+                          (update :phasors (partial mapv #(dissoc % :group)))
+                          (dissoc :drawing :curve))]))})
 
 ;; This is the model representing the constituents of our spirograph.
 ;; Three [phasors](https://en.wikipedia.org/wiki/Phasor), each one carrying an amplitude and an angular frequency.
@@ -163,7 +167,7 @@
                            (let [{:keys [path value]} (osc->map (.getMessage event))]
                              (update-model! #(assoc-in % path value))))))))))
 
-(defonce osc-out (OSCPortOut. (InetSocketAddress. "192.168.178.114" 6660)))
+(defonce osc-out (OSCPortOut. (InetSocketAddress. "10.33.8.65" 7777)))
 
 (defn sync-osc [{:keys [phasors mode]}]
   (.send osc-out
@@ -216,9 +220,10 @@
   @model
   (do
     (reset! model
-            #_ {:mode    0,
+            #_{:mode    0,
                :phasors [{:amplitude 0.4, :frequency 0.2}
                          {:amplitude 1.0, :frequency -0.2}
+
                          {:amplitude 0.4, :frequency 0.6}]}
             #_{:mode    0
                :phasors [{:amplitude 0.41, :frequency 0.46}
@@ -226,32 +231,34 @@
                          {:amplitude 0.6, :frequency -0.45}]}
 
             #_{:mode    0,
-               :phasors [{:amplitude 0.41, :frequency 0.46}
-                         {:amplitude 0.46, :frequency -0.44}
-                         {:amplitude 1.0, :frequency -0.45}]}
+               :phasors [{:amplitude 0.35, :frequency -0.3}
+                         {:amplitude 0.83, :frequency 0.2}
+                         {:amplitude 1.0, :frequency 0.35}]}
 
-            #_ {:mode    0
+
+            {:mode    0,
+             :phasors [{:amplitude 0.41, :frequency 0.46}
+                       {:amplitude 0.46, :frequency -0.44}
+                       {:amplitude 1.0, :frequency -0.45}]}
+
+            #_{:mode    0
                :phasors [{:amplitude 0.57, :frequency 0.39}
                          {:amplitude 0.5, :frequency -0.27}
                          {:amplitude 0.125, :frequency 0.27}]}
 
-            #_ {:phasors [{:amplitude 0.9, :frequency 0.06}
+            #_{:phasors [{:amplitude 0.9, :frequency 0.06}
                          {:amplitude 0.46, :frequency 0.1}
                          {:amplitude 0.46, :frequency -0.45}]}
 
-            #_ {:mode    0,
-             :phasors [{:amplitude 0.70, :frequency -0.25}
-                       {:amplitude 0.60, :frequency 0.45}
-                       {:amplitude 0.50, :frequency 0.25}]}
-
-            {:mode    1,
-             :phasors [{:amplitude 0.57, :frequency 0.33}
-                       {:amplitude 1.0, :frequency -0.35}
-                       {:amplitude 0.31, :frequency 0.14}]}
             #_{:mode    0,
-               :phasors [{:amplitude 0.80, :frequency 0.55}
-                         {:amplitude 0.5, :frequency -0.27}
-                         {:amplitude 0.75, :frequency 0.27}]})
+               :phasors [{:amplitude 0.70, :frequency -0.25}
+                         {:amplitude 0.60, :frequency 0.45}
+                         {:amplitude 0.50, :frequency 0.25}]}
+
+            #_{:mode    0,
+               :phasors [{:amplitude 0.57, :frequency 0.33}
+                         {:amplitude 1.0, :frequency -0.35}
+                         {:amplitude 0.31, :frequency 0.14}]})
     (swap! model assoc :clean? true)
     (clerk/recompute!)
     (swap! model assoc :clean? false)
