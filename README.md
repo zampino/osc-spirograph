@@ -2,6 +2,8 @@
 
 A Clerk Notebook with a demo for OSC driven graphic interactions. A "static" version is available here https://zampino.github.io/osc-spirograph.
 
+https://user-images.githubusercontent.com/1078464/176853884-d46926df-d994-4266-9877-71800d84879b.mp4
+
 ## Usage
 
 Checkout, start your REPL, boot Clerk
