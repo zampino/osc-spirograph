@@ -26,13 +26,8 @@ jobs:
       - name: 🔨 Build static site
         run: NOSC=true clojure -X:nextjournal/clerk
 
-      - name: 🎭 Rename Index
-        run: |
-          cd public/build/notebooks
-          mv osc_spirograph.html index.html
-
       - name: 🚀 Deploy
         uses: JamesIves/github-pages-deploy-action@v4.3.0
         with:
           branch: gh-pages
-          folder: ./public/build/notebooks
+          folder: ./public/build
